@@ -2,8 +2,6 @@
 
 Instantly visualize your mathematical functions. Plotify is a simple, intuitive web application that takes a mathematical equation as input and generates a clean, downloadable PNG graph. This project focuses on providing a seamless user experience, inspired by the simplicity of tools like QRify.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](your-live-demo-link-here) ![Plotify Screenshot](placeholder-for-your-screenshot.png) ## Features
-
 -   **Equation Input**: A simple text field to enter your mathematical equations (e.g., `y = x^2`).
 -   **Instant Visualization**: See the graph of your equation generated in real-time.
 -   **PNG Export**: Download the generated graph as a high-quality PNG file with a single click.
@@ -25,7 +23,7 @@ To run this project locally, follow these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/plotify.git](https://github.com/your-username/plotify.git)
+    git clone [https://github.com/Nidhish-05/plotify.git](https://github.com/Nidhish-05/plotify.git)
     ```
 2.  **Navigate to the project directory:**
     ```bash
