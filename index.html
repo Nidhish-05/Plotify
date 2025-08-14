@@ -13,6 +13,9 @@
     
     <!-- Math.js for parsing mathematical equations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.min.js"></script>
+
+    <!-- Chart.js Zoom Plugin for zoom/pan functionality -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,6 +30,19 @@
         }
         .hero-gradient {
             background: linear-gradient(90deg, #6366f1, #a855f7);
+        }
+        /* Custom styles for the mode switcher */
+        .mode-switch-label {
+            cursor: pointer;
+            padding: 8px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9999px;
+            transition: all 0.2s ease-in-out;
+        }
+        .mode-switch-input:checked + .mode-switch-label {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+            border-color: #4f46e5;
         }
     </style>
 </head>
@@ -50,9 +66,9 @@
         <!-- Hero Section -->
         <section class="hero-gradient text-white py-20 md:py-28">
             <div class="container mx-auto px-6 text-center">
-                <h2 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Bring Your Equations to Life</h2>
+                <h2 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Bring Your Data to Life</h2>
                 <p class="text-lg md:text-xl max-w-3xl mx-auto text-indigo-100">
-                    Instantly visualize any function. Enter your equation, choose your graph type, customize it, and download your creation.
+                    Visualize functions or plot data points. Customize, zoom, pan, and download your perfect graph.
                 </p>
             </div>
         </section>
@@ -66,49 +82,64 @@
                     <div class="lg:col-span-1">
                         <h3 class="text-2xl font-bold mb-6 text-slate-900">Graph Controls</h3>
                         
-                        <!-- Equation Input -->
+                        <!-- Plot Mode Switcher -->
                         <div class="mb-6">
-                            <label for="equation" class="block text-sm font-medium text-slate-700 mb-2">y = f(x) Equation</label>
-                            <input type="text" id="equation" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., x^2 or sin(x)">
-                            <p class="text-xs text-slate-500 mt-2">Use 'x' as the variable.</p>
+                            <label class="block text-sm font-medium text-slate-700 mb-3">Plotting Mode</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="radio" id="modeEquation" name="plotMode" value="equation" class="hidden mode-switch-input" checked>
+                                <label for="modeEquation" class="mode-switch-label">Equation</label>
+                                
+                                <input type="radio" id="modeCoordinates" name="plotMode" value="coordinates" class="hidden mode-switch-input">
+                                <label for="modeCoordinates" class="mode-switch-label">Coordinates</label>
+                            </div>
                         </div>
 
-                        <!-- Graph Type Selection -->
+                        <!-- Equation Mode Controls -->
+                        <div id="equation-controls">
+                            <div class="mb-6">
+                                <label for="equation" class="block text-sm font-medium text-slate-700 mb-2">y = f(x) Equation</label>
+                                <input type="text" id="equation" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., x^2 or sin(x)">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label for="xMin" class="block text-sm font-medium text-slate-700 mb-2">x-Min</label>
+                                    <input type="number" id="xMin" value="-10" class="w-full px-4 py-2 border border-slate-300 rounded-lg">
+                                </div>
+                                <div>
+                                    <label for="xMax" class="block text-sm font-medium text-slate-700 mb-2">x-Max</label>
+                                    <input type="number" id="xMax" value="10" class="w-full px-4 py-2 border border-slate-300 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coordinates Mode Controls -->
+                        <div id="coordinates-controls" class="hidden">
+                            <div class="mb-6">
+                                <label for="coordinates" class="block text-sm font-medium text-slate-700 mb-2">Coordinates (x, y)</label>
+                                <textarea id="coordinates" rows="5" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Enter one coordinate pair per line.&#10;Example:&#10;1, 5&#10;2, 8&#10;3, 2"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Common Controls -->
                         <div class="mb-6">
                             <label for="graphType" class="block text-sm font-medium text-slate-700 mb-2">Graph Type</label>
-                            <select id="graphType" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white">
+                            <select id="graphType" class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-white">
                                 <option value="curvedLine">Curved Line</option>
                                 <option value="straightLine">Straight Line</option>
                                 <option value="scatter">Scatter Plot</option>
                                 <option value="bar">Bar Chart</option>
                             </select>
                         </div>
-                        
-                        <!-- X-Axis Range -->
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <label for="xMin" class="block text-sm font-medium text-slate-700 mb-2">x-Min</label>
-                                <input type="number" id="xMin" value="-10" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                            </div>
-                            <div>
-                                <label for="xMax" class="block text-sm font-medium text-slate-700 mb-2">x-Max</label>
-                                <input type="number" id="xMax" value="10" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                            </div>
-                        </div>
-
-                        <!-- Axis Labels -->
                         <div class="grid grid-cols-2 gap-4 mb-6">
                             <div>
                                 <label for="xLabel" class="block text-sm font-medium text-slate-700 mb-2">X-Axis Label</label>
-                                <input type="text" id="xLabel" value="x-axis" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                <input type="text" id="xLabel" value="x-axis" class="w-full px-4 py-2 border border-slate-300 rounded-lg">
                             </div>
                             <div>
                                 <label for="yLabel" class="block text-sm font-medium text-slate-700 mb-2">Y-Axis Label</label>
-                                <input type="text" id="yLabel" value="y-axis" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                <input type="text" id="yLabel" value="y-axis" class="w-full px-4 py-2 border border-slate-300 rounded-lg">
                             </div>
                         </div>
-
-                        <!-- Graph Customization -->
                         <div class="mb-6">
                             <label for="lineColor" class="block text-sm font-medium text-slate-700 mb-2">Graph Color</label>
                             <input type="color" id="lineColor" value="#6366f1" class="w-full h-10 p-1 border border-slate-300 rounded-lg cursor-pointer">
@@ -124,14 +155,20 @@
                             </button>
                         </div>
                         
-                        <!-- Error Message Display -->
                         <div id="error-message" class="mt-4 text-red-600 font-medium text-sm"></div>
-
                     </div>
                     
                     <!-- Graph Display Column -->
-                    <div class="lg:col-span-2 bg-slate-100 p-4 rounded-xl flex items-center justify-center min-h-[300px] lg:min-h-[500px]">
-                        <canvas id="graphCanvas"></canvas>
+                    <div class="lg:col-span-2 flex flex-col items-center justify-center">
+                        <div class="w-full h-full bg-slate-100 p-4 rounded-xl flex items-center justify-center min-h-[300px] lg:min-h-[500px]">
+                            <canvas id="graphCanvas"></canvas>
+                        </div>
+                        <!-- Zoom Controls -->
+                        <div id="zoom-controls" class="mt-4 flex items-center space-x-3 hidden">
+                            <button id="zoomInBtn" class="px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition">Zoom In</button>
+                            <button id="zoomOutBtn" class="px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition">Zoom Out</button>
+                            <button id="resetZoomBtn" class="px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition">Reset Zoom</button>
+                        </div>
                     </div>
 
                 </div>
@@ -149,7 +186,11 @@
 
     <script>
         // --- DOM Element Selection ---
+        const modeSwitches = document.querySelectorAll('input[name="plotMode"]');
+        const equationControls = document.getElementById('equation-controls');
+        const coordinatesControls = document.getElementById('coordinates-controls');
         const equationInput = document.getElementById('equation');
+        const coordinatesInput = document.getElementById('coordinates');
         const graphTypeSelect = document.getElementById('graphType');
         const xMinInput = document.getElementById('xMin');
         const xMaxInput = document.getElementById('xMax');
@@ -158,96 +199,111 @@
         const lineColorInput = document.getElementById('lineColor');
         const generateBtn = document.getElementById('generateBtn');
         const downloadBtn = document.getElementById('downloadBtn');
+        const zoomControls = document.getElementById('zoom-controls');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const resetZoomBtn = document.getElementById('resetZoomBtn');
         const canvas = document.getElementById('graphCanvas');
         const errorMessageDiv = document.getElementById('error-message');
         const ctx = canvas.getContext('2d');
         
         let graphChart = null;
+        // Register the zoom plugin globally
+        Chart.register(chartjs_plugin_zoom);
 
         // --- Event Listeners ---
+        modeSwitches.forEach(sw => sw.addEventListener('change', (e) => {
+            if (e.target.value === 'equation') {
+                equationControls.classList.remove('hidden');
+                coordinatesControls.classList.add('hidden');
+            } else {
+                equationControls.classList.add('hidden');
+                coordinatesControls.classList.remove('hidden');
+            }
+        }));
+
         generateBtn.addEventListener('click', generateGraph);
         downloadBtn.addEventListener('click', downloadGraph);
-        equationInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') generateGraph();
-        });
+        zoomInBtn.addEventListener('click', () => graphChart?.zoom(1.1));
+        zoomOutBtn.addEventListener('click', () => graphChart?.zoom(0.9));
+        resetZoomBtn.addEventListener('click', () => graphChart?.resetZoom());
 
         /**
-         * Core function to generate and render the graph.
+         * Core function to generate and render the graph based on the current mode.
          */
         function generateGraph() {
             errorMessageDiv.textContent = '';
-            
-            // --- 1. Get User Inputs ---
-            const equationStr = equationInput.value;
-            const graphType = graphTypeSelect.value;
-            const xMin = parseFloat(xMinInput.value);
-            const xMax = parseFloat(xMaxInput.value);
-            const xLabel = xLabelInput.value || 'x-axis';
-            const yLabel = yLabelInput.value || 'y-axis';
-            const graphColor = lineColorInput.value;
+            const mode = document.querySelector('input[name="plotMode"]:checked').value;
+            let data = [];
+            let labels = [];
+            let chartLabel = 'My Graph';
 
-            // --- 2. Input Validation ---
-            if (!equationStr) {
-                showError("Please enter an equation.");
-                return;
-            }
-            if (isNaN(xMin) || isNaN(xMax) || xMin >= xMax) {
-                showError("Please enter a valid x-axis range where x-Min is less than x-Max.");
-                return;
-            }
-
-            // --- 3. Parse Equation & Generate Data ---
             try {
-                const compiled = math.parse(equationStr).compile();
-                const data = [];
-                const labels = [];
-                const step = (xMax - xMin) / 200; // 200 points for a smooth curve
-
-                for (let x = xMin; x <= xMax; x += step) {
-                    const y = compiled.evaluate({ x: x });
-                    const finiteY = isFinite(y) ? y : null;
+                if (mode === 'equation') {
+                    // --- Equation Mode Logic ---
+                    const equationStr = equationInput.value;
+                    if (!equationStr) throw new Error("Please enter an equation.");
                     
-                    if (graphType === 'scatter') {
-                        // Scatter plots need an array of {x, y} objects
-                        data.push({ x: x, y: finiteY });
-                    } else {
-                        // Line and Bar charts use separate labels and data arrays
-                        labels.push(x.toFixed(2));
-                        data.push(finiteY);
+                    const xMin = parseFloat(xMinInput.value);
+                    const xMax = parseFloat(xMaxInput.value);
+                    if (isNaN(xMin) || isNaN(xMax) || xMin >= xMax) {
+                        throw new Error("Please enter a valid x-axis range.");
                     }
+
+                    const compiled = math.parse(equationStr).compile();
+                    const step = (xMax - xMin) / 200;
+                    chartLabel = `y = ${equationStr}`;
+
+                    for (let x = xMin; x <= xMax; x += step) {
+                        const y = compiled.evaluate({ x: x });
+                        const finiteY = isFinite(y) ? y : null;
+                        data.push({ x: x, y: finiteY });
+                    }
+                } else {
+                    // --- Coordinates Mode Logic ---
+                    const coordText = coordinatesInput.value.trim();
+                    if (!coordText) throw new Error("Please enter coordinates.");
+
+                    const lines = coordText.split('\n');
+                    data = lines.map(line => {
+                        const parts = line.split(/[,;\s]+/).map(Number);
+                        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+                            throw new Error(`Invalid coordinate format on line: "${line}"`);
+                        }
+                        return { x: parts[0], y: parts[1] };
+                    });
                 }
 
-                // --- 4. Prepare Chart Configuration ---
-                // Destroy the old chart instance if it exists
-                if (graphChart) {
-                    graphChart.destroy();
+                // For line/bar charts, we need separate labels and data arrays
+                if (graphTypeSelect.value !== 'scatter') {
+                    labels = data.map(p => p.x.toFixed(2));
+                    const yData = data.map(p => p.y);
+                    data = yData; // Replace data object with just y-values
                 }
 
-                const chartConfig = buildChartConfig(graphType, data, labels, equationStr, graphColor, xLabel, yLabel);
+                // --- Render Chart ---
+                if (graphChart) graphChart.destroy();
+                const chartConfig = buildChartConfig(
+                    graphTypeSelect.value, data, labels, chartLabel, 
+                    lineColorInput.value, xLabelInput.value, yLabelInput.value
+                );
                 graphChart = new Chart(ctx, chartConfig);
                 
                 downloadBtn.classList.remove('hidden');
+                zoomControls.classList.remove('hidden');
 
             } catch (err) {
-                showError(`Invalid Equation: ${err.message}`);
+                showError(err.message);
                 console.error(err);
             }
         }
 
         /**
-         * Builds the configuration object for Chart.js based on the selected graph type.
-         * @param {string} type - The type of graph ('curvedLine', 'scatter', etc.).
-         * @param {Array} data - The array of data points.
-         * @param {Array} labels - The array of x-axis labels (for line/bar charts).
-         * @param {string} equationStr - The user's equation string for the label.
-         * @param {string} color - The hex color for the graph.
-         * @param {string} xLabel - The label for the x-axis.
-         * @param {string} yLabel - The label for the y-axis.
-         * @returns {object} The Chart.js configuration object.
+         * Builds the configuration object for Chart.js.
          */
-        function buildChartConfig(type, data, labels, equationStr, color, xLabel, yLabel) {
+        function buildChartConfig(type, data, labels, chartLabel, color, xLabel, yLabel) {
             const baseDatasetConfig = {
-                label: `y = ${equationStr}`,
+                label: chartLabel,
                 data: data,
                 borderColor: color,
                 backgroundColor: color,
@@ -255,25 +311,25 @@
             };
 
             const config = {
-                data: {
-                    datasets: [baseDatasetConfig]
-                },
+                data: { datasets: [baseDatasetConfig] },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: {
-                            title: { display: true, text: xLabel, font: { size: 14, weight: 'bold' } },
-                            grid: { color: '#e2e8f0' }
-                        },
-                        y: {
-                            title: { display: true, text: yLabel, font: { size: 14, weight: 'bold' } },
-                            grid: { color: '#e2e8f0' }
-                        }
+                        x: { title: { display: true, text: xLabel, font: { size: 14, weight: 'bold' } }, grid: { color: '#e2e8f0' } },
+                        y: { title: { display: true, text: yLabel, font: { size: 14, weight: 'bold' } }, grid: { color: '#e2e8f0' } }
                     },
                     plugins: {
-                        legend: { position: 'top', labels: { font: { size: 14 } } },
-                        tooltip: { enabled: true, mode: 'index', intersect: false }
+                        legend: { position: 'top' },
+                        tooltip: { enabled: true, mode: 'index', intersect: false },
+                        zoom: {
+                            pan: { enabled: true, mode: 'xy' },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'xy',
+                            }
+                        }
                     }
                 }
             };
@@ -281,19 +337,14 @@
             // Customize config based on graph type
             switch (type) {
                 case 'curvedLine':
-                    config.type = 'line';
-                    config.data.labels = labels;
-                    config.options.elements = { point: { radius: 0 }, line: { tension: 0.4 } };
-                    break;
                 case 'straightLine':
                     config.type = 'line';
                     config.data.labels = labels;
-                    config.options.elements = { point: { radius: 0 }, line: { tension: 0 } };
+                    config.options.elements = { point: { radius: 0 }, line: { tension: type === 'curvedLine' ? 0.4 : 0 } };
                     break;
                 case 'scatter':
                     config.type = 'scatter';
-                    // For scatter, the x-axis must be linear to plot the {x,y} data correctly
-                    config.options.scales.x.type = 'linear'; 
+                    config.options.scales.x.type = 'linear';
                     break;
                 case 'bar':
                     config.type = 'bar';
@@ -304,7 +355,7 @@
         }
 
         /**
-         * Handles downloading the current state of the canvas as a PNG image.
+         * Handles downloading the canvas as a PNG.
          */
         function downloadGraph() {
             if (!graphChart) {
@@ -325,12 +376,12 @@
         }
 
         /**
-         * Helper function to display an error message to the user.
-         * @param {string} message - The error message to display.
+         * Displays an error message.
          */
         function showError(message) {
             errorMessageDiv.textContent = message;
             downloadBtn.classList.add('hidden');
+            zoomControls.classList.add('hidden');
         }
     </script>
 </body>
