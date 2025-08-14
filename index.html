@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Genius | Interactive Graph Generator</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for creating graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Math.js for parsing mathematical equations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.min.js"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .hero-gradient {
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                <h1 class="text-2xl font-bold text-slate-900">Graph Genius</h1>
+            </div>
+            <nav>
+                <a href="#generator" class="text-slate-600 hover:text-indigo-500 font-medium">Generator</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-gradient text-white py-20 md:py-28">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Bring Your Equations to Life</h2>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto text-indigo-100">
+                    Instantly visualize any function. Enter your equation, choose your graph type, customize it, and download your creation.
+                </p>
+            </div>
+        </section>
+
+        <!-- Graph Generator Section -->
+        <section id="generator" class="py-16 md:py-24 bg-slate-50">
+            <div class="container mx-auto px-6">
+                <div class="bg-white p-8 rounded-2xl shadow-lg max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+                    
+                    <!-- Controls Column -->
+                    <div class="lg:col-span-1">
+                        <h3 class="text-2xl font-bold mb-6 text-slate-900">Graph Controls</h3>
+                        
+                        <!-- Equation Input -->
+                        <div class="mb-6">
+                            <label for="equation" class="block text-sm font-medium text-slate-700 mb-2">y = f(x) Equation</label>
+                            <input type="text" id="equation" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., x^2 or sin(x)">
+                            <p class="text-xs text-slate-500 mt-2">Use 'x' as the variable.</p>
+                        </div>
+
+                        <!-- Graph Type Selection -->
+                        <div class="mb-6">
+                            <label for="graphType" class="block text-sm font-medium text-slate-700 mb-2">Graph Type</label>
+                            <select id="graphType" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white">
+                                <option value="curvedLine">Curved Line</option>
+                                <option value="straightLine">Straight Line</option>
+                                <option value="scatter">Scatter Plot</option>
+                                <option value="bar">Bar Chart</option>
+                            </select>
+                        </div>
+                        
+                        <!-- X-Axis Range -->
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label for="xMin" class="block text-sm font-medium text-slate-700 mb-2">x-Min</label>
+                                <input type="number" id="xMin" value="-10" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            </div>
+                            <div>
+                                <label for="xMax" class="block text-sm font-medium text-slate-700 mb-2">x-Max</label>
+                                <input type="number" id="xMax" value="10" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- Axis Labels -->
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label for="xLabel" class="block text-sm font-medium text-slate-700 mb-2">X-Axis Label</label>
+                                <input type="text" id="xLabel" value="x-axis" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            </div>
+                            <div>
+                                <label for="yLabel" class="block text-sm font-medium text-slate-700 mb-2">Y-Axis Label</label>
+                                <input type="text" id="yLabel" value="y-axis" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- Graph Customization -->
+                        <div class="mb-6">
+                            <label for="lineColor" class="block text-sm font-medium text-slate-700 mb-2">Graph Color</label>
+                            <input type="color" id="lineColor" value="#6366f1" class="w-full h-10 p-1 border border-slate-300 rounded-lg cursor-pointer">
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-8 space-y-4">
+                            <button id="generateBtn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-md">
+                                Generate Graph
+                            </button>
+                            <button id="downloadBtn" class="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 transition-all duration-300 transform hover:scale-105 shadow-md hidden">
+                                Download as PNG
+                            </button>
+                        </div>
+                        
+                        <!-- Error Message Display -->
+                        <div id="error-message" class="mt-4 text-red-600 font-medium text-sm"></div>
+
+                    </div>
+                    
+                    <!-- Graph Display Column -->
+                    <div class="lg:col-span-2 bg-slate-100 p-4 rounded-xl flex items-center justify-center min-h-[300px] lg:min-h-[500px]">
+                        <canvas id="graphCanvas"></canvas>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2024 Graph Genius. Created with passion for mathematics and code.</p>
+            <p class="text-sm mt-1">A project by Nidhish Bansal, inspired by the beauty of functions.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- DOM Element Selection ---
+        const equationInput = document.getElementById('equation');
+        const graphTypeSelect = document.getElementById('graphType');
+        const xMinInput = document.getElementById('xMin');
+        const xMaxInput = document.getElementById('xMax');
+        const xLabelInput = document.getElementById('xLabel');
+        const yLabelInput = document.getElementById('yLabel');
+        const lineColorInput = document.getElementById('lineColor');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('graphCanvas');
+        const errorMessageDiv = document.getElementById('error-message');
+        const ctx = canvas.getContext('2d');
+        
+        let graphChart = null;
+
+        // --- Event Listeners ---
+        generateBtn.addEventListener('click', generateGraph);
+        downloadBtn.addEventListener('click', downloadGraph);
+        equationInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') generateGraph();
+        });
+
+        /**
+         * Core function to generate and render the graph.
+         */
+        function generateGraph() {
+            errorMessageDiv.textContent = '';
+            
+            // --- 1. Get User Inputs ---
+            const equationStr = equationInput.value;
+            const graphType = graphTypeSelect.value;
+            const xMin = parseFloat(xMinInput.value);
+            const xMax = parseFloat(xMaxInput.value);
+            const xLabel = xLabelInput.value || 'x-axis';
+            const yLabel = yLabelInput.value || 'y-axis';
+            const graphColor = lineColorInput.value;
+
+            // --- 2. Input Validation ---
+            if (!equationStr) {
+                showError("Please enter an equation.");
+                return;
+            }
+            if (isNaN(xMin) || isNaN(xMax) || xMin >= xMax) {
+                showError("Please enter a valid x-axis range where x-Min is less than x-Max.");
+                return;
+            }
+
+            // --- 3. Parse Equation & Generate Data ---
+            try {
+                const compiled = math.parse(equationStr).compile();
+                const data = [];
+                const labels = [];
+                const step = (xMax - xMin) / 200; // 200 points for a smooth curve
+
+                for (let x = xMin; x <= xMax; x += step) {
+                    const y = compiled.evaluate({ x: x });
+                    const finiteY = isFinite(y) ? y : null;
+                    
+                    if (graphType === 'scatter') {
+                        // Scatter plots need an array of {x, y} objects
+                        data.push({ x: x, y: finiteY });
+                    } else {
+                        // Line and Bar charts use separate labels and data arrays
+                        labels.push(x.toFixed(2));
+                        data.push(finiteY);
+                    }
+                }
+
+                // --- 4. Prepare Chart Configuration ---
+                // Destroy the old chart instance if it exists
+                if (graphChart) {
+                    graphChart.destroy();
+                }
+
+                const chartConfig = buildChartConfig(graphType, data, labels, equationStr, graphColor, xLabel, yLabel);
+                graphChart = new Chart(ctx, chartConfig);
+                
+                downloadBtn.classList.remove('hidden');
+
+            } catch (err) {
+                showError(`Invalid Equation: ${err.message}`);
+                console.error(err);
+            }
+        }
+
+        /**
+         * Builds the configuration object for Chart.js based on the selected graph type.
+         * @param {string} type - The type of graph ('curvedLine', 'scatter', etc.).
+         * @param {Array} data - The array of data points.
+         * @param {Array} labels - The array of x-axis labels (for line/bar charts).
+         * @param {string} equationStr - The user's equation string for the label.
+         * @param {string} color - The hex color for the graph.
+         * @param {string} xLabel - The label for the x-axis.
+         * @param {string} yLabel - The label for the y-axis.
+         * @returns {object} The Chart.js configuration object.
+         */
+        function buildChartConfig(type, data, labels, equationStr, color, xLabel, yLabel) {
+            const baseDatasetConfig = {
+                label: `y = ${equationStr}`,
+                data: data,
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2.5,
+            };
+
+            const config = {
+                data: {
+                    datasets: [baseDatasetConfig]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: xLabel, font: { size: 14, weight: 'bold' } },
+                            grid: { color: '#e2e8f0' }
+                        },
+                        y: {
+                            title: { display: true, text: yLabel, font: { size: 14, weight: 'bold' } },
+                            grid: { color: '#e2e8f0' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { size: 14 } } },
+                        tooltip: { enabled: true, mode: 'index', intersect: false }
+                    }
+                }
+            };
+
+            // Customize config based on graph type
+            switch (type) {
+                case 'curvedLine':
+                    config.type = 'line';
+                    config.data.labels = labels;
+                    config.options.elements = { point: { radius: 0 }, line: { tension: 0.4 } };
+                    break;
+                case 'straightLine':
+                    config.type = 'line';
+                    config.data.labels = labels;
+                    config.options.elements = { point: { radius: 0 }, line: { tension: 0 } };
+                    break;
+                case 'scatter':
+                    config.type = 'scatter';
+                    // For scatter, the x-axis must be linear to plot the {x,y} data correctly
+                    config.options.scales.x.type = 'linear'; 
+                    break;
+                case 'bar':
+                    config.type = 'bar';
+                    config.data.labels = labels;
+                    break;
+            }
+            return config;
+        }
+
+        /**
+         * Handles downloading the current state of the canvas as a PNG image.
+         */
+        function downloadGraph() {
+            if (!graphChart) {
+                showError("Please generate a graph first.");
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = 'graph.png';
+            const newCanvas = document.createElement('canvas');
+            newCanvas.width = canvas.width;
+            newCanvas.height = canvas.height;
+            const newCtx = newCanvas.getContext('2d');
+            newCtx.fillStyle = '#ffffff';
+            newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+            newCtx.drawImage(canvas, 0, 0);
+            link.href = newCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        /**
+         * Helper function to display an error message to the user.
+         * @param {string} message - The error message to display.
+         */
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            downloadBtn.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
