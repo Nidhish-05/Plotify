@@ -38,6 +38,7 @@
             border: 1px solid #cbd5e1;
             border-radius: 9999px;
             transition: all 0.2s ease-in-out;
+            user-select: none; /* Prevents text selection on click */
         }
         .mode-switch-input:checked + .mode-switch-label {
             background-color: #4f46e5; /* indigo-600 */
@@ -170,7 +171,6 @@
                             <button id="resetZoomBtn" class="px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition">Reset Zoom</button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </section>
@@ -185,204 +185,212 @@
     </footer>
 
     <script>
-        // --- DOM Element Selection ---
-        const modeSwitches = document.querySelectorAll('input[name="plotMode"]');
-        const equationControls = document.getElementById('equation-controls');
-        const coordinatesControls = document.getElementById('coordinates-controls');
-        const equationInput = document.getElementById('equation');
-        const coordinatesInput = document.getElementById('coordinates');
-        const graphTypeSelect = document.getElementById('graphType');
-        const xMinInput = document.getElementById('xMin');
-        const xMaxInput = document.getElementById('xMax');
-        const xLabelInput = document.getElementById('xLabel');
-        const yLabelInput = document.getElementById('yLabel');
-        const lineColorInput = document.getElementById('lineColor');
-        const generateBtn = document.getElementById('generateBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const zoomControls = document.getElementById('zoom-controls');
-        const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-        const resetZoomBtn = document.getElementById('resetZoomBtn');
-        const canvas = document.getElementById('graphCanvas');
-        const errorMessageDiv = document.getElementById('error-message');
-        const ctx = canvas.getContext('2d');
-        
-        let graphChart = null;
-        // Register the zoom plugin globally
-        Chart.register(chartjs_plugin_zoom);
+        // This event listener ensures that the script runs only after the entire page
+        // has been loaded and parsed. This prevents errors from trying to access
+        // elements that don't exist yet.
+        document.addEventListener('DOMContentLoaded', () => {
 
-        // --- Event Listeners ---
-        modeSwitches.forEach(sw => sw.addEventListener('change', (e) => {
-            if (e.target.value === 'equation') {
-                equationControls.classList.remove('hidden');
-                coordinatesControls.classList.add('hidden');
-            } else {
-                equationControls.classList.add('hidden');
-                coordinatesControls.classList.remove('hidden');
-            }
-        }));
+            // --- DOM Element Selection ---
+            const modeSwitches = document.querySelectorAll('input[name="plotMode"]');
+            const equationControls = document.getElementById('equation-controls');
+            const coordinatesControls = document.getElementById('coordinates-controls');
+            const equationInput = document.getElementById('equation');
+            const coordinatesInput = document.getElementById('coordinates');
+            const graphTypeSelect = document.getElementById('graphType');
+            const xMinInput = document.getElementById('xMin');
+            const xMaxInput = document.getElementById('xMax');
+            const xLabelInput = document.getElementById('xLabel');
+            const yLabelInput = document.getElementById('yLabel');
+            const lineColorInput = document.getElementById('lineColor');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const zoomControls = document.getElementById('zoom-controls');
+            const zoomInBtn = document.getElementById('zoomInBtn');
+            const zoomOutBtn = document.getElementById('zoomOutBtn');
+            const resetZoomBtn = document.getElementById('resetZoomBtn');
+            const canvas = document.getElementById('graphCanvas');
+            const errorMessageDiv = document.getElementById('error-message');
+            const ctx = canvas.getContext('2d');
+            
+            let graphChart = null;
+            // Register the zoom plugin globally
+            // FIX: The global variable for the plugin is ChartZoom, not chartjs_plugin_zoom
+            Chart.register(ChartZoom);
 
-        generateBtn.addEventListener('click', generateGraph);
-        downloadBtn.addEventListener('click', downloadGraph);
-        zoomInBtn.addEventListener('click', () => graphChart?.zoom(1.1));
-        zoomOutBtn.addEventListener('click', () => graphChart?.zoom(0.9));
-        resetZoomBtn.addEventListener('click', () => graphChart?.resetZoom());
+            // --- Event Listeners ---
+            modeSwitches.forEach(sw => sw.addEventListener('change', (e) => {
+                const isEquationMode = e.target.value === 'equation';
+                equationControls.classList.toggle('hidden', !isEquationMode);
+                coordinatesControls.classList.toggle('hidden', isEquationMode);
+            }));
 
-        /**
-         * Core function to generate and render the graph based on the current mode.
-         */
-        function generateGraph() {
-            errorMessageDiv.textContent = '';
-            const mode = document.querySelector('input[name="plotMode"]:checked').value;
-            let data = [];
-            let labels = [];
-            let chartLabel = 'My Graph';
+            generateBtn.addEventListener('click', generateGraph);
+            downloadBtn.addEventListener('click', downloadGraph);
+            zoomInBtn.addEventListener('click', () => graphChart?.zoom(1.1));
+            zoomOutBtn.addEventListener('click', () => graphChart?.zoom(0.9));
+            resetZoomBtn.addEventListener('click', () => graphChart?.resetZoom());
 
-            try {
-                if (mode === 'equation') {
-                    // --- Equation Mode Logic ---
-                    const equationStr = equationInput.value;
-                    if (!equationStr) throw new Error("Please enter an equation.");
-                    
-                    const xMin = parseFloat(xMinInput.value);
-                    const xMax = parseFloat(xMaxInput.value);
-                    if (isNaN(xMin) || isNaN(xMax) || xMin >= xMax) {
-                        throw new Error("Please enter a valid x-axis range.");
-                    }
-
-                    const compiled = math.parse(equationStr).compile();
-                    const step = (xMax - xMin) / 200;
-                    chartLabel = `y = ${equationStr}`;
-
-                    for (let x = xMin; x <= xMax; x += step) {
-                        const y = compiled.evaluate({ x: x });
-                        const finiteY = isFinite(y) ? y : null;
-                        data.push({ x: x, y: finiteY });
-                    }
-                } else {
-                    // --- Coordinates Mode Logic ---
-                    const coordText = coordinatesInput.value.trim();
-                    if (!coordText) throw new Error("Please enter coordinates.");
-
-                    const lines = coordText.split('\n');
-                    data = lines.map(line => {
-                        const parts = line.split(/[,;\s]+/).map(Number);
-                        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
-                            throw new Error(`Invalid coordinate format on line: "${line}"`);
-                        }
-                        return { x: parts[0], y: parts[1] };
-                    });
-                }
-
-                // For line/bar charts, we need separate labels and data arrays
-                if (graphTypeSelect.value !== 'scatter') {
-                    labels = data.map(p => p.x.toFixed(2));
-                    const yData = data.map(p => p.y);
-                    data = yData; // Replace data object with just y-values
-                }
-
-                // --- Render Chart ---
-                if (graphChart) graphChart.destroy();
-                const chartConfig = buildChartConfig(
-                    graphTypeSelect.value, data, labels, chartLabel, 
-                    lineColorInput.value, xLabelInput.value, yLabelInput.value
-                );
-                graphChart = new Chart(ctx, chartConfig);
+            /**
+             * Core function to generate and render the graph based on the current mode.
+             */
+            function generateGraph() {
+                errorMessageDiv.textContent = '';
+                const mode = document.querySelector('input[name="plotMode"]:checked').value;
                 
-                downloadBtn.classList.remove('hidden');
-                zoomControls.classList.remove('hidden');
+                // This will hold the data as an array of {x, y} points, regardless of the source.
+                let plotData = []; 
+                let chartLabel = 'My Graph';
 
-            } catch (err) {
-                showError(err.message);
-                console.error(err);
+                try {
+                    // --- Step 1: Parse input and populate plotData ---
+                    if (mode === 'equation') {
+                        const equationStr = equationInput.value;
+                        if (!equationStr) throw new Error("Please enter an equation.");
+                        
+                        const xMin = parseFloat(xMinInput.value);
+                        const xMax = parseFloat(xMaxInput.value);
+                        if (isNaN(xMin) || isNaN(xMax) || xMin >= xMax) {
+                            throw new Error("Please enter a valid x-axis range.");
+                        }
+
+                        const compiled = math.parse(equationStr).compile();
+                        const step = (xMax - xMin) / 200; // More points for a smoother curve
+                        chartLabel = `y = ${equationStr}`;
+
+                        for (let x = xMin; x <= xMax; x += step) {
+                            const y = compiled.evaluate({ x: x });
+                            plotData.push({ x: x, y: isFinite(y) ? y : null });
+                        }
+                    } else { // Coordinates mode
+                        const coordText = coordinatesInput.value.trim();
+                        if (!coordText) throw new Error("Please enter coordinates.");
+
+                        plotData = coordText.split('\n').map((line, index) => {
+                            // Use a flexible regex to split by comma, semicolon, or spaces
+                            const parts = line.trim().split(/[,;\s]+/).map(Number);
+                            if (parts.length !== 2 || parts.some(isNaN)) {
+                                throw new Error(`Invalid format on line ${index + 1}: "${line}"`);
+                            }
+                            return { x: parts[0], y: parts[1] };
+                        });
+                    }
+
+                    // --- Step 2: Prepare data for Chart.js ---
+                    const type = graphTypeSelect.value;
+                    let chartData;
+                    let chartLabels = undefined;
+
+                    if (type === 'scatter') {
+                        chartData = plotData; // Scatter chart uses {x,y} objects directly
+                    } else {
+                        // Line and Bar charts need separate labels and data arrays
+                        chartData = plotData.map(p => p.y);
+                        chartLabels = plotData.map(p => p.x.toFixed(2));
+                    }
+
+                    // --- Step 3: Render Chart ---
+                    if (graphChart) graphChart.destroy();
+                    const chartConfig = buildChartConfig(
+                        type, chartData, chartLabels, chartLabel, 
+                        lineColorInput.value, xLabelInput.value, yLabelInput.value
+                    );
+                    graphChart = new Chart(ctx, chartConfig);
+                    
+                    downloadBtn.classList.remove('hidden');
+                    zoomControls.classList.remove('hidden');
+
+                } catch (err) {
+                    showError(err.message);
+                    console.error(err);
+                }
             }
-        }
 
-        /**
-         * Builds the configuration object for Chart.js.
-         */
-        function buildChartConfig(type, data, labels, chartLabel, color, xLabel, yLabel) {
-            const baseDatasetConfig = {
-                label: chartLabel,
-                data: data,
-                borderColor: color,
-                backgroundColor: color,
-                borderWidth: 2.5,
-            };
+            /**
+             * Builds the configuration object for Chart.js.
+             */
+            function buildChartConfig(type, data, labels, chartLabel, color, xLabel, yLabel) {
+                const baseDatasetConfig = {
+                    label: chartLabel,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color,
+                    borderWidth: 2.5,
+                };
 
-            const config = {
-                data: { datasets: [baseDatasetConfig] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { title: { display: true, text: xLabel, font: { size: 14, weight: 'bold' } }, grid: { color: '#e2e8f0' } },
-                        y: { title: { display: true, text: yLabel, font: { size: 14, weight: 'bold' } }, grid: { color: '#e2e8f0' } }
+                const config = {
+                    data: { 
+                        labels: labels, // Can be undefined for scatter charts
+                        datasets: [baseDatasetConfig] 
                     },
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: { enabled: true, mode: 'index', intersect: false },
-                        zoom: {
-                            pan: { enabled: true, mode: 'xy' },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: xLabel, font: { size: 14, weight: 'bold' } }, grid: { color: '#e2e8f0' } },
+                            y: { title: { display: true, text: yLabel, font: { size: 14, weight: 'bold' } }, grid: { color: '#e2e8f0' } }
+                        },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: { enabled: true, mode: 'index', intersect: false },
                             zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
-                                mode: 'xy',
+                                pan: { enabled: true, mode: 'xy' },
+                                zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }
                             }
                         }
                     }
+                };
+
+                // Customize config based on graph type
+                switch (type) {
+                    case 'curvedLine':
+                    case 'straightLine':
+                        config.type = 'line';
+                        // For line charts, connect points over null values (e.g., for tan(x))
+                        config.data.datasets[0].spanGaps = true; 
+                        config.options.elements = { point: { radius: 0 }, line: { tension: type === 'curvedLine' ? 0.4 : 0 } };
+                        break;
+                    case 'scatter':
+                        config.type = 'scatter';
+                        // Scatter plots require a linear x-axis to plot (x,y) data correctly
+                        config.options.scales.x.type = 'linear'; 
+                        break;
+                    case 'bar':
+                        config.type = 'bar';
+                        break;
                 }
-            };
-
-            // Customize config based on graph type
-            switch (type) {
-                case 'curvedLine':
-                case 'straightLine':
-                    config.type = 'line';
-                    config.data.labels = labels;
-                    config.options.elements = { point: { radius: 0 }, line: { tension: type === 'curvedLine' ? 0.4 : 0 } };
-                    break;
-                case 'scatter':
-                    config.type = 'scatter';
-                    config.options.scales.x.type = 'linear';
-                    break;
-                case 'bar':
-                    config.type = 'bar';
-                    config.data.labels = labels;
-                    break;
+                return config;
             }
-            return config;
-        }
 
-        /**
-         * Handles downloading the canvas as a PNG.
-         */
-        function downloadGraph() {
-            if (!graphChart) {
-                showError("Please generate a graph first.");
-                return;
+            /**
+             * Handles downloading the canvas as a PNG.
+             */
+            function downloadGraph() {
+                if (!graphChart) {
+                    showError("Please generate a graph first.");
+                    return;
+                }
+                const link = document.createElement('a');
+                link.download = 'graph_genius.png';
+                const newCanvas = document.createElement('canvas');
+                newCanvas.width = canvas.width;
+                newCanvas.height = canvas.height;
+                const newCtx = newCanvas.getContext('2d');
+                newCtx.fillStyle = '#ffffff'; // Set a white background for the PNG
+                newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+                newCtx.drawImage(canvas, 0, 0);
+                link.href = newCanvas.toDataURL('image/png');
+                link.click();
             }
-            const link = document.createElement('a');
-            link.download = 'graph.png';
-            const newCanvas = document.createElement('canvas');
-            newCanvas.width = canvas.width;
-            newCanvas.height = canvas.height;
-            const newCtx = newCanvas.getContext('2d');
-            newCtx.fillStyle = '#ffffff';
-            newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
-            newCtx.drawImage(canvas, 0, 0);
-            link.href = newCanvas.toDataURL('image/png');
-            link.click();
-        }
 
-        /**
-         * Displays an error message.
-         */
-        function showError(message) {
-            errorMessageDiv.textContent = message;
-            downloadBtn.classList.add('hidden');
-            zoomControls.classList.add('hidden');
-        }
+            /**
+             * Displays an error message.
+             */
+            function showError(message) {
+                errorMessageDiv.textContent = `⚠️ ${message}`;
+                downloadBtn.classList.add('hidden');
+                zoomControls.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
